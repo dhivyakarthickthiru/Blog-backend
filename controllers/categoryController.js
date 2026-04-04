@@ -51,7 +51,7 @@ exports.getCategories = async (
 ) => {
   try {
     const categories =
-      await Category.find();
+      await Category.find().populate("createdBy", "name");
 
     res.json(categories);
 
@@ -62,7 +62,42 @@ exports.getCategories = async (
   }
 };
 
+// UPDATE CATEGORY
 
+exports.updateCategory = async (req, res) => {
+  try {
+    const { name, description } =
+      req.body;
+
+    const category =
+      await Category.findByIdAndUpdate(
+        req.params.id,
+        {
+          name,
+          description
+        },
+        {
+          new: true
+        }
+      );
+
+    if (!category) {
+      return res.status(404).json({
+        message: "Category not found"
+      });
+    }
+
+    res.json({
+      message: "Category updated",
+      category
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
 
 // DELETE CATEGORY
 
