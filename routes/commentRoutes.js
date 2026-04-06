@@ -2,28 +2,54 @@ const express = require("express");
 
 const router = express.Router();
 
-const {createComment,getComments,updateComment,deleteComment} = require("../controllers/commentController");
+const {createComment,getComments,updateComment,deleteComment,approveComment} = require("../controllers/commentController");
 
-const {protect} = require("../middlewares/authMiddleware");
-
-
-// Add comment routes
-
-router.post("/",protect,createComment);
+const {protect,adminOnly} = require("../middlewares/authMiddleware");
 
 
-// Get comments by post routes
+// 1️⃣ Create Comment (User login required)
 
-router.get("/post/:postId",getComments);
+router.post(
+  "/",
+  protect,
+  createComment
+);
 
 
-// Update comment routes
+// 2️⃣ Get Comments by Post (Public)
 
-router.put("/:id",protect,updateComment);
+router.get(
+  "/post/:postId",
+  getComments
+);
 
 
-// Delete comment routes
+// 3️⃣ Update Comment (Owner OR Admin)
 
-router.delete("/:id",protect,deleteComment);
+router.put(
+  "/:id",
+  protect,
+  updateComment
+);
+
+
+// 4️⃣ Delete Comment (Owner OR Admin)
+
+router.delete(
+  "/:id",
+  protect,
+  deleteComment
+);
+
+
+// 5️⃣ Approve Comment (Admin only)
+
+router.put(
+  "/approve/:id",
+  protect,
+  adminOnly,
+  approveComment
+);
+
 
 module.exports = router;

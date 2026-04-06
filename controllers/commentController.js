@@ -31,8 +31,10 @@ exports.createComment = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   try {
+
     const comments = await Comment.find({
-      post: req.params.postId
+      post: req.params.postId,
+      isApproved: true
     })
       .populate("user", "name")
       .sort({ createdAt: -1 });
@@ -52,14 +54,29 @@ exports.getComments = async (req, res) => {
 
 exports.updateComment = async (req, res) => {
   try {
+
     const comment =
-      await Comment.findByIdAndUpdate(
-        req.params.id,
-        { text: req.body.text },
-        {
-          returnDocument: "after"
-        }
-      );
+      await Comment.findById(req.params.id);
+
+    if (!comment) {
+      return res.status(404).json({
+        message: "Comment not found"
+      });
+    }
+
+    if (
+      comment.user.toString() !==
+      req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Not authorized"
+      });
+    }
+
+    comment.text = req.body.text;
+
+    await comment.save();
 
     res.json({
       message: "Comment updated",
@@ -74,17 +91,62 @@ exports.updateComment = async (req, res) => {
 };
 
 
-
 // DELETE COMMENT
 
 exports.deleteComment = async (req, res) => {
   try {
-    await Comment.findByIdAndDelete(
-      req.params.id
-    );
+
+    const comment =
+      await Comment.findById(req.params.id);
+
+    if (!comment) {
+      return res.status(404).json({
+        message: "Comment not found"
+      });
+    }
+
+    if (
+      comment.user.toString() !==
+      req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Not authorized"
+      });
+    }
+
+    await comment.deleteOne();
 
     res.json({
       message: "Comment deleted"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+//approved admins
+
+
+exports.approveComment = async (req, res) => {
+  try {
+    const comment = await Comment.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: true },
+      { returnDocument: "after" }
+    );
+
+    if (!comment) {
+      return res.status(404).json({
+        message: "Comment not found"
+      });
+    }
+
+    res.json({
+      message: "Comment approved",
+      comment
     });
 
   } catch (error) {

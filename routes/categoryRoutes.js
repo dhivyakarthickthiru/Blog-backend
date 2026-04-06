@@ -4,12 +4,12 @@ const router = express.Router();
 
 const {createCategory,getCategories,updateCategory,deleteCategory} = require( "../controllers/categoryController");
 
-const {protect} = require("../middlewares/authMiddleware");
+const {protect,adminOnly} = require("../middlewares/authMiddleware");
 
 
 // Create category
 
-router.post( "/",protect,createCategory);
+router.post( "/",protect,adminOnly,createCategory);
  
 
 

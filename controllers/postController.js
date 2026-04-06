@@ -1,6 +1,8 @@
 const Post = require("../models/Post");
 
 
+// 1️⃣ CREATE POST
+
 exports.createPost = async (req, res) => {
   try {
     let {
@@ -39,6 +41,8 @@ exports.createPost = async (req, res) => {
 
 
 
+// 2️⃣ GET ALL POSTS
+
 exports.getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
@@ -55,7 +59,9 @@ exports.getPosts = async (req, res) => {
   }
 };
 
-// GET SINGLE POST
+
+
+// 3️⃣ GET SINGLE POST
 
 exports.getPostById = async (req, res) => {
   try {
@@ -79,11 +85,13 @@ exports.getPostById = async (req, res) => {
   }
 };
 
-// UPDATE POST
+
+
+// 4️⃣ UPDATE POST (Owner OR Admin)
 
 exports.updatePost = async (req, res) => {
   try {
-    const {
+    let {
       title,
       content,
       category,
@@ -91,7 +99,30 @@ exports.updatePost = async (req, res) => {
       status
     } = req.body;
 
-    const post = await Post.findByIdAndUpdate(
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    // Permission check
+    if (
+      post.author.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Not authorized to update this post"
+      });
+    }
+
+    // Ensure tags array
+    if (typeof tags === "string") {
+      tags = [tags];
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
       req.params.id,
       {
         title,
@@ -105,15 +136,9 @@ exports.updatePost = async (req, res) => {
       }
     );
 
-    if (!post) {
-      return res.status(404).json({
-        message: "Post not found"
-      });
-    }
-
     res.json({
       message: "Post updated",
-      post
+      post: updatedPost
     });
 
   } catch (error) {
@@ -123,19 +148,31 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-// DELETE POST
+
+
+// 5️⃣ DELETE POST (Owner OR Admin)
 
 exports.deletePost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndDelete(
-      req.params.id
-    );
+    const post = await Post.findById(req.params.id);
 
     if (!post) {
       return res.status(404).json({
         message: "Post not found"
       });
     }
+
+    // Permission check
+    if (
+      post.author.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Not authorized to delete this post"
+      });
+    }
+
+    await post.deleteOne();
 
     res.json({
       message: "Post deleted successfully"
