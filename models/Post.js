@@ -34,7 +34,22 @@ const postSchema = new mongoose.Schema(
       type: String,
       enum: ["draft", "published"],
       default: "published"
+    },
+
+
+    views: {
+    type: Number,
+    default: 0
+  },
+   
+   // NEW FIELD
+
+  likes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     }
+  ]
     
   },
   {

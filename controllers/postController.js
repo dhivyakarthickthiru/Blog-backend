@@ -184,3 +184,128 @@ exports.deletePost = async (req, res) => {
     });
   }
 };
+
+//increment views
+
+exports.incrementPostViews = async (req, res) => {
+  try {
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: { views: 1 }
+      },
+      {
+        returnDocument: "after"
+      }
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    res.json({
+      message: "View counted",
+      views: post.views
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+//likes views
+
+exports.likePost = async (req, res) => {
+  try {
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    // Check if already liked
+
+    if (post.likes.includes(req.user._id)) {
+      return res.status(400).json({
+        message: "You already liked this post"
+      });
+    }
+
+    post.likes.push(req.user._id);
+
+    await post.save();
+
+    res.json({
+      message: "Post liked",
+      totalLikes: post.likes.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+//unlike post
+
+exports.unlikePost = async (req, res) => {
+  try {
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    post.likes = post.likes.filter(
+      (userId) =>
+        userId.toString() !== req.user._id.toString()
+    );
+
+    await post.save();
+
+    res.json({
+      message: "Post unliked",
+      totalLikes: post.likes.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+//get likes count
+
+exports.getLikesCount = async (req, res) => {
+  try {
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    res.json({
+      totalLikes: post.likes.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
