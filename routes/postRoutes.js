@@ -8,61 +8,86 @@ const {
   getPostById,
   updatePost,
   deletePost,
-  incrementPostViews
-
-
+  incrementPostViews,
+  addBookmark,
+  removeBookmark,
+  getMyBookmarks,
+  searchPosts,
+  likePost,
+  unlikePost,
+  getLikesCount
 } = require("../controllers/postController");
 
 const {
   protect
 } = require("../middlewares/authMiddleware");
 
-const {
-  likePost,
-  unlikePost,
-  getLikesCount
-} = require("../controllers/postController");
 
+// =============================
+// SPECIAL ROUTES FIRST
+// =============================
+
+// Search posts
+
+router.get("/search", searchPosts);
+
+// Get my bookmarks
+
+router.get("/my/bookmarks", protect, getMyBookmarks);
+
+
+// =============================
+// BASIC CRUD
+// =============================
 
 // Create Post
 
-router.post("/",protect,createPost);
+router.post("/", protect, createPost);
 
+// Get all posts
 
-// Get Posts
+router.get("/", getPosts);
 
-router.get("/",getPosts);
-
-
-// Get Single Post
+// Get single post
 
 router.get("/:id", getPostById);
 
-
-// Update Post
+// Update post
 
 router.put("/:id", protect, updatePost);
 
-
-// Delete Post
+// Delete post
 
 router.delete("/:id", protect, deletePost);
 
-// increment views route
 
-router.put("/:id/view",incrementPostViews);
+// =============================
+// EXTRA FEATURES
+// =============================
 
+// Increment views
+
+router.put("/:id/view", incrementPostViews);
 
 // Like post
 
-router.post("/:id/like",protect,likePost);
+router.post("/:id/like", protect, likePost);
 
 // Unlike post
 
-router.delete("/:id/unlike",protect,unlikePost);
+router.delete("/:id/unlike", protect, unlikePost);
 
 // Get likes count
 
-router.get("/:id/likes",getLikesCount);
+router.get("/:id/likes", getLikesCount);
+
+// Add bookmark
+
+router.post("/:id/bookmark", protect, addBookmark);
+
+// Remove bookmark
+
+router.delete("/:id/bookmark", protect, removeBookmark);
+
 
 module.exports = router;
