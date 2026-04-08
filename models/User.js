@@ -28,7 +28,28 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user"
-    }
+    },
+
+    subscriptions: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
+
+  subscribers: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
+
+categorySubscriptions: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category"
+  }
+]
   },
   {
     timestamps: true
