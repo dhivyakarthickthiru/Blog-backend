@@ -1,4 +1,9 @@
 const Post = require("../models/Post");
+<<<<<<< HEAD
+=======
+const Notification = require("../models/Notification");
+>>>>>>> main
+const User = require("../models/User");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
@@ -321,6 +326,179 @@ exports.getLikesCount = async (req, res) => {
 
     res.json({
       totalLikes: post.likes.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+exports.addBookmark = async (req, res) => {
+  try {
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // check post exists
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    // already bookmarked
+
+    if (user.bookmarks.includes(req.params.id)) {
+      return res.status(400).json({
+        message: "Post already bookmarked"
+      });
+    }
+
+    user.bookmarks.push(req.params.id);
+
+    await user.save();
+
+    res.json({
+      message: "Post bookmarked successfully",
+      totalBookmarks: user.bookmarks.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+exports.removeBookmark = async (req, res) => {
+  try {
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    const beforeCount = user.bookmarks.length;
+
+    user.bookmarks = user.bookmarks.filter(
+      (postId) =>
+        postId.toString() !== req.params.id
+    );
+
+    await user.save();
+
+    if (beforeCount === user.bookmarks.length) {
+      return res.status(400).json({
+        message: "Bookmark not found"
+      });
+    }
+
+    res.json({
+      message: "Bookmark removed",
+      totalBookmarks: user.bookmarks.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+exports.getMyBookmarks = async (req, res) => {
+  try {
+
+    const user = await User.findById(req.user._id)
+      .populate({
+        path: "bookmarks",
+        model: "Post",   // IMPORTANT
+        populate: [
+          {
+            path: "category",
+            model: "Category",
+            select: "name"
+          },
+          {
+            path: "author",
+            model: "User",
+            select: "name email"
+          },
+          {
+            path: "tags",
+            model: "Tag",
+            select: "name"
+          }
+        ]
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      total: user.bookmarks.length,
+      bookmarks: user.bookmarks
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
+
+// SEARCH POSTS
+
+exports.searchPosts = async (req, res) => {
+  try {
+
+    const keyword = req.query.keyword;
+
+    // If no keyword
+
+    if (!keyword) {
+      return res.status(400).json({
+        message: "Please provide search keyword"
+      });
+    }
+
+    const posts = await Post.find({
+      $or: [
+        {
+          title: {
+            $regex: keyword,
+            $options: "i"
+          }
+        },
+        {
+          content: {
+            $regex: keyword,
+            $options: "i"
+          }
+        }
+      ]
+    })
+      .populate("category", "name")
+      .populate("tags", "name")
+      .populate("author", "name");
+
+    res.json({
+      total: posts.length,
+      posts
     });
 
   } catch (error) {

@@ -30,6 +30,17 @@ const userSchema = new mongoose.Schema(
       default: "user"
     },
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+   bookmarks: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Post"
+  }
+     ], 
+=======
+>>>>>>> dev
     subscriptions: [
   {
     type: mongoose.Schema.Types.ObjectId,
@@ -50,6 +61,10 @@ categorySubscriptions: [
     ref: "Category"
   }
 ]
+<<<<<<< HEAD
+=======
+>>>>>>> main
+>>>>>>> dev
   },
   {
     timestamps: true
