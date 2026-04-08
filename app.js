@@ -12,6 +12,17 @@ const tagRoutes =
 const commentRoutes =
   require("./routes/commentRoutes");
 
+const categorySubscriptionRoutes =
+  require(
+    "./routes/categorySubscriptionRoutes"
+  ); 
+
+const subscriptionRoutes =
+  require("./routes/subscriptionRoutes");
+
+const notificationRoutes =
+  require("./routes/notificationRoutes");  
+
 
 
 const app=express();
@@ -29,6 +40,13 @@ app.use("/api/posts",postRoutes);
 app.use("/api/tags",tagRoutes);
 
 app.use("/api/comments",commentRoutes);
+
+app.use("/api/category-subscriptions",categorySubscriptionRoutes);
+
+app.use("/api/subscriptions",subscriptionRoutes);
+
+
+app.use("/api/notifications",notificationRoutes);
 
 
 module.exports=app;

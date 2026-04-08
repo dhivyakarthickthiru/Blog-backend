@@ -1,4 +1,8 @@
 const Post = require("../models/Post");
+<<<<<<< HEAD
+=======
+const Notification = require("../models/Notification");
+>>>>>>> main
 const User = require("../models/User");
 
 
@@ -27,6 +31,24 @@ exports.createPost = async (req, res) => {
       status,
       author: req.user._id
     });
+
+
+   // NOTIFICATION LOGIC
+
+const subscribers = await User.find({
+  subscriptions: req.user._id
+});
+
+for (const subscriber of subscribers) {
+
+  await Notification.create({
+    recipient: subscriber._id,
+    sender: req.user._id,
+    post: post._id,
+    message: "New post from user you subscribed"
+  });
+
+} 
 
     res.status(201).json({
       message: "Post created",

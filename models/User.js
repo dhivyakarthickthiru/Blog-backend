@@ -30,12 +30,35 @@ const userSchema = new mongoose.Schema(
       default: "user"
     },
 
+<<<<<<< HEAD
    bookmarks: [
   {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Post"
   }
      ], 
+=======
+    subscriptions: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
+
+  subscribers: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+],
+
+categorySubscriptions: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category"
+  }
+]
+>>>>>>> main
   },
   {
     timestamps: true
