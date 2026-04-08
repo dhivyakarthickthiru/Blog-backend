@@ -1,9 +1,8 @@
 const Post = require("../models/Post");
-<<<<<<< HEAD
-=======
-const Notification = require("../models/Notification");
->>>>>>> main
-const User = require("../models/User");
+
+
+
+
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
