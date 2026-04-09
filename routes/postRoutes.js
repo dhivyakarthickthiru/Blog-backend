@@ -15,7 +15,9 @@ const {
   searchPosts,
   likePost,
   unlikePost,
-  getLikesCount
+  getLikesCount,
+  getPostAnalytics,
+  incrementShare
 } = require("../controllers/postController");
 
 const {
@@ -47,6 +49,14 @@ router.post("/", protect, createPost);
 // Get all posts
 
 router.get("/", getPosts);
+
+router.get("/:id/analytics",getPostAnalytics);
+
+
+// SHARE POST //
+
+router.put("/:id/share",incrementShare);
+
 
 // Get single post
 
@@ -88,6 +98,7 @@ router.post("/:id/bookmark", protect, addBookmark);
 // Remove bookmark
 
 router.delete("/:id/bookmark", protect, removeBookmark);
+
 
 
 module.exports = router;

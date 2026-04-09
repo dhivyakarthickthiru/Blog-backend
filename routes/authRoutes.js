@@ -8,7 +8,9 @@ const {
   loginUser,
   logoutUser,
   getMe,
-  changePassword
+  changePassword,
+  updateProfile,
+  getMyProfile
 } = require(
   "../controllers/authController"
 );
@@ -56,6 +58,23 @@ router.put(
   "/change-password",
   protect,
   changePassword
+);
+
+
+// GET PROFILE
+
+router.get(
+  "/profile",
+  protect,
+  getMyProfile
+);
+
+// UPDATE PROFILE
+
+router.put(
+  "/profile",
+  protect,
+  updateProfile
 );
 
 module.exports = router;

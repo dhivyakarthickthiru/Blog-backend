@@ -49,7 +49,14 @@ const postSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     }
-  ]
+  ],
+
+ 
+ shares: {
+  type: Number,
+  default: 0
+} 
+
     
   },
   {

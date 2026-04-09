@@ -59,7 +59,35 @@ categorySubscriptions: [
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category"
   }
-]
+],
+bio: {
+  type: String,
+  default: ""
+},
+
+profilePicture: {
+  type: String,
+  default: ""
+},
+
+socialLinks: {
+  facebook: {
+    type: String,
+    default: ""
+  },
+  twitter: {
+    type: String,
+    default: ""
+  },
+  linkedin: {
+    type: String,
+    default: ""
+  },
+  instagram: {
+    type: String,
+    default: ""
+  }
+}
 
 
   },

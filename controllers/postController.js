@@ -1,16 +1,15 @@
 const Post = require("../models/Post");
-
-
-
-
 const Notification = require("../models/Notification");
 const User = require("../models/User");
+const Comment = require("../models/Comment");
+
 
 
 // 1️⃣ CREATE POST
 
 exports.createPost = async (req, res) => {
   try {
+
     let {
       title,
       content,
@@ -19,10 +18,13 @@ exports.createPost = async (req, res) => {
       status
     } = req.body;
 
-    // Ensure tags is always array
+    // Ensure tags is array
+
     if (typeof tags === "string") {
       tags = [tags];
     }
+
+    // Create post
 
     const post = await Post.create({
       title,
@@ -34,35 +36,52 @@ exports.createPost = async (req, res) => {
     });
 
 
-   // NOTIFICATION LOGIC
+    // =========================
+    // NOTIFICATION LOGIC
+    // =========================
 
-const subscribers = await User.find({
-  subscriptions: req.user._id
-});
+    // Find subscribers of this author
 
-for (const subscriber of subscribers) {
+    const subscribers = await User.find({
+      subscriptions: req.user._id
+    });
 
-  await Notification.create({
-    recipient: subscriber._id,
-    sender: req.user._id,
-    post: post._id,
-    message: "New post from user you subscribed"
-  });
+    // Prepare notifications array
 
-} 
+    const notifications = subscribers
+      .filter(
+        (subscriber) =>
+          subscriber._id.toString() !==
+          req.user._id.toString()
+      )
+      .map((subscriber) => ({
+        recipient: subscriber._id,
+        sender: req.user._id,
+        post: post._id,
+        message: "New post from user you subscribed"
+      }));
+
+    // Insert notifications
+
+    if (notifications.length > 0) {
+      await Notification.insertMany(
+        notifications
+      );
+    }
 
     res.status(201).json({
-      message: "Post created",
+      message: "Post created successfully",
       post
     });
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
 };
-
 
 
 // 2️⃣ GET ALL POSTS
@@ -115,6 +134,7 @@ exports.getPostById = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
+
     let {
       title,
       content,
@@ -123,7 +143,9 @@ exports.updatePost = async (req, res) => {
       status
     } = req.body;
 
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(
+      req.params.id
+    );
 
     if (!post) {
       return res.status(404).json({
@@ -132,33 +154,72 @@ exports.updatePost = async (req, res) => {
     }
 
     // Permission check
+
     if (
-      post.author.toString() !== req.user._id.toString() &&
+      post.author.toString() !==
+        req.user._id.toString() &&
       req.user.role !== "admin"
     ) {
       return res.status(403).json({
-        message: "Not authorized to update this post"
+        message:
+          "Not authorized to update this post"
       });
     }
 
     // Ensure tags array
+
     if (typeof tags === "string") {
       tags = [tags];
     }
 
-    const updatedPost = await Post.findByIdAndUpdate(
-      req.params.id,
-      {
-        title,
-        content,
-        category,
-        tags,
-        status
-      },
-      {
-        returnDocument: "after"
-      }
-    );
+    // Update post
+
+    const updatedPost =
+      await Post.findByIdAndUpdate(
+        req.params.id,
+        {
+          title,
+          content,
+          category,
+          tags,
+          status
+        },
+        {
+          returnDocument: "after"
+        }
+      );
+
+    // =========================
+    // NOTIFICATION LOGIC
+    // =========================
+
+    const subscribers =
+      await User.find({
+        subscriptions:
+          updatedPost.author
+      });
+
+    const notifications =
+      subscribers
+        .filter(
+          (subscriber) =>
+            subscriber._id.toString() !==
+            req.user._id.toString()
+        )
+        .map((subscriber) => ({
+          recipient:
+            subscriber._id,
+          sender: req.user._id,
+          post: updatedPost._id,
+          message:
+            "Post updated by subscribed user"
+        }));
+
+    if (notifications.length > 0) {
+      await Notification.insertMany(
+        notifications
+      );
+    }
 
     res.json({
       message: "Post updated",
@@ -166,13 +227,13 @@ exports.updatePost = async (req, res) => {
     });
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
 };
-
-
 
 // 5️⃣ DELETE POST (Owner OR Admin)
 
@@ -504,5 +565,77 @@ exports.searchPosts = async (req, res) => {
     res.status(500).json({
       message: error.message
     });
+  }
+};
+
+// GET POST ANALYTICS
+
+exports.getPostAnalytics = async (req, res) => {
+  try {
+
+    const postId = req.params.id;
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    // Count comments
+
+    const commentsCount =
+      await Comment.countDocuments({
+        post: postId
+      });
+
+    res.json({
+
+      views: post.views,
+
+      likes: post.likes.length,
+
+      comments: commentsCount,
+
+      shares: post.shares
+
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
+
+// INCREMENT SHARE COUNT
+
+exports.incrementShare = async (req, res) => {
+  try {
+
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: { shares: 1 }
+      },
+      {
+        returnDocument: "after"
+      }
+    );
+
+    res.json({
+      message: "Post shared successfully",
+      shares: post.shares
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
   }
 };

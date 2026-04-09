@@ -167,3 +167,66 @@ exports.changePassword = async (req, res) => {
     });
   }
 };
+
+
+// UPDATE PROFILE
+
+exports.updateProfile = async (req, res) => {
+  try {
+
+    const {
+      name,
+      bio,
+      profilePicture,
+      socialLinks
+    } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+
+      {
+        name,
+        bio,
+        profilePicture,
+        socialLinks
+      },
+
+      {
+        returnDocument: "after"
+      }
+
+    ).select("-password");
+
+    res.json({
+      message: "Profile updated successfully",
+      user
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
+
+// GET MY PROFILE
+
+exports.getMyProfile = async (req, res) => {
+  try {
+
+    const user = await User.findById(
+      req.user._id
+    ).select("-password");
+
+    res.json(user);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
