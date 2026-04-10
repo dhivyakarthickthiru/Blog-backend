@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Post = require("../models/Post");
 
 
 
@@ -221,6 +222,113 @@ exports.getMyProfile = async (req, res) => {
     ).select("-password");
 
     res.json(user);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
+
+
+
+const fs = require("fs");
+const path = require("path");
+
+exports.uploadProfilePicture = async (req, res) => {
+
+  try {
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: "No file uploaded"
+      });
+    }
+
+    // Find user
+    const user = await User.findById(
+      req.user._id
+    );
+
+    // DELETE OLD IMAGE (if exists)
+
+    if (user.profilePicture) {
+
+      const oldPath = path.join(
+        __dirname,
+        "..",
+        user.profilePicture
+      );
+
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+
+    }
+
+    // SAVE NEW IMAGE PATH
+
+    const imagePath =
+      "/uploads/" +
+      req.file.filename;
+
+    user.profilePicture =
+      imagePath;
+
+    await user.save();
+
+    res.json({
+      message:
+        "Profile picture updated",
+      profilePicture:
+        imagePath
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
+
+
+
+exports.getAuthorPage = async (req, res) => {
+  try {
+
+    const authorId = req.params.id;
+
+    // 1️⃣ Get author details
+
+    const author = await User.findById(authorId)
+      .select("-password");
+
+    if (!author) {
+      return res.status(404).json({
+        message: "Author not found"
+      });
+    }
+
+    // 2️⃣ Get all posts by author
+
+    const posts = await Post.find({
+      author: authorId
+    })
+      .populate("category", "name")
+      .populate("tags", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      author,
+      totalPosts: posts.length,
+      posts
+    });
 
   } catch (error) {
 

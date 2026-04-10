@@ -10,10 +10,19 @@ const {
   getMe,
   changePassword,
   updateProfile,
-  getMyProfile
+  getMyProfile,
+   uploadProfilePicture,
+   getAuthorPage
+
+
+  
 } = require(
   "../controllers/authController"
 );
+
+const upload =
+require("../middlewares/uploadMiddleware");
+ 
 
 const {
   protect
@@ -75,6 +84,19 @@ router.put(
   "/profile",
   protect,
   updateProfile
+);
+
+router.put(
+  "/upload-profile-picture",
+  protect,
+  upload.single("image"),
+  uploadProfilePicture
+);
+
+
+router.get(
+  "/authors/:id",
+  getAuthorPage
 );
 
 module.exports = router;

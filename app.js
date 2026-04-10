@@ -48,5 +48,7 @@ app.use("/api/subscriptions",subscriptionRoutes);
 
 app.use("/api/notifications",notificationRoutes);
 
+app.use("/uploads",express.static("uploads"));
+
 
 module.exports=app;
