@@ -25,6 +25,10 @@ const {
 } = require("../middlewares/authMiddleware");
 
 
+const upload =
+  require("../middlewares/uploadMiddleware");
+
+
 // =============================
 // SPECIAL ROUTES FIRST
 // =============================
@@ -44,8 +48,11 @@ router.get("/my/bookmarks", protect, getMyBookmarks);
 
 // Create Post
 
-router.post("/", protect, createPost);
 
+
+
+
+router.post("/",protect,upload.single("image"),createPost);
 // Get all posts
 
 router.get("/", getPosts);

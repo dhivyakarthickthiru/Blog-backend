@@ -15,13 +15,14 @@ const postSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: true
+      required: false,
+      default:null
     },
 
     tags: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Tag"
+        type: String,
+        default:null
       }
     ],
 
@@ -35,6 +36,11 @@ const postSchema = new mongoose.Schema(
       enum: ["draft", "published"],
       default: "published"
     },
+
+   image: {
+  type: String,
+  default: ""
+}, 
 
 
     views: {

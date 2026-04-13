@@ -10,6 +10,10 @@ const Comment = require("../models/Comment");
 exports.createPost = async (req, res) => {
   try {
 
+    console.log("USER:", req.user);
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
     let {
       title,
       content,
@@ -18,72 +22,138 @@ exports.createPost = async (req, res) => {
       status
     } = req.body;
 
-    // Ensure tags is array
+    // =========================
+    // VALIDATION
+    // =========================
+
+    if (!title || !content) {
+      return res.status(400).json({
+        message: "Title and content required"
+      });
+    }
+
+    // =========================
+    // DEFAULT VALUES
+    // =========================
+
+    if (!category) {
+      category = null;
+    }
+
+    if (!tags) {
+      tags = [];
+    }
 
     if (typeof tags === "string") {
       tags = [tags];
     }
 
-    // Create post
+    if (!status) {
+      status = "published";
+    }
 
-    const post = await Post.create({
-      title,
-      content,
-      category,
-      tags,
-      status,
-      author: req.user._id
-    });
+    // =========================
+    // IMAGE HANDLING
+    // =========================
 
+    const image =
+      req.file
+        ? req.file.filename
+        : "";
+
+    // =========================
+    // CREATE POST
+    // =========================
+
+    const post =
+      await Post.create({
+
+        title,
+        content,
+        category,
+        tags,
+        status,
+        image,
+        author:
+          req.user._id
+
+      });
 
     // =========================
     // NOTIFICATION LOGIC
     // =========================
 
-    // Find subscribers of this author
+    const subscribers =
+      await User.find({
+        subscriptions:
+          req.user._id
+      });
 
-    const subscribers = await User.find({
-      subscriptions: req.user._id
-    });
+    const notifications =
+      subscribers
+        .filter(
+          (subscriber) =>
+            subscriber._id.toString() !==
+            req.user._id.toString()
+        )
+        .map(
+          (subscriber) => ({
 
-    // Prepare notifications array
+            recipient:
+              subscriber._id,
 
-    const notifications = subscribers
-      .filter(
-        (subscriber) =>
-          subscriber._id.toString() !==
-          req.user._id.toString()
-      )
-      .map((subscriber) => ({
-        recipient: subscriber._id,
-        sender: req.user._id,
-        post: post._id,
-        message: "New post from user you subscribed"
-      }));
+            sender:
+              req.user._id,
 
-    // Insert notifications
+            post:
+              post._id,
 
-    if (notifications.length > 0) {
+            message:
+              "New post from user you subscribed"
+
+          })
+        );
+
+    if (
+      notifications.length > 0
+    ) {
+
       await Notification.insertMany(
         notifications
       );
+
     }
 
+    // =========================
+    // RESPONSE
+    // =========================
+
     res.status(201).json({
-      message: "Post created successfully",
+
+      message:
+        "Post created successfully",
+
       post
+
     });
 
   } catch (error) {
 
+    console.log(
+      "CREATE POST ERROR:"
+    );
+
+    console.log(error);
+
     res.status(500).json({
-      message: error.message
+
+      message:
+        error.message
+
     });
 
   }
 };
-
-
 // 2️⃣ GET ALL POSTS
 
 exports.getPosts = async (req, res) => {
