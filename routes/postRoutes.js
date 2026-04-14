@@ -4,6 +4,7 @@ const router = express.Router();
 
 const {
   createPost,
+  getMyPosts,
   getPosts,
   getPostById,
   updatePost,
@@ -53,6 +54,13 @@ router.get("/my/bookmarks", protect, getMyBookmarks);
 
 
 router.post("/",protect,upload.single("image"),createPost);
+
+
+router.get(
+  "/my-posts",
+  protect,
+  getMyPosts
+);
 // Get all posts
 
 router.get("/", getPosts);
@@ -71,7 +79,7 @@ router.get("/:id", getPostById);
 
 // Update post
 
-router.put("/:id", protect, updatePost);
+router.put("/:id", protect, upload.single("image"), updatePost);
 
 // Delete post
 

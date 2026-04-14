@@ -49,7 +49,7 @@ exports.createPost = async (req, res) => {
     }
 
     if (!status) {
-      status = "published";
+      status = "draft";
     }
 
     // =========================
@@ -154,23 +154,77 @@ exports.createPost = async (req, res) => {
 
   }
 };
-// 2️⃣ GET ALL POSTS
 
-exports.getPosts = async (req, res) => {
+
+// GET MY POSTS
+
+exports.getMyPosts = async (req, res) => {
+
   try {
-    const posts = await Post.find()
-      .populate("category", "name")
-      .populate("tags", "name")
-      .populate("author", "name");
+
+    const posts =
+      await Post.find({
+
+        author: req.user._id
+
+      })
+        .populate(
+          "category",
+          "name"
+        )
+        .populate(
+          "author",
+          "name"
+        );
 
     res.json(posts);
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
+
 };
+// 2️⃣ GET ALL POSTS
+// 2️⃣ GET ALL POSTS WITH CATEGORY FILTER
+
+exports.getPosts = async (req, res) => {
+
+  try {
+
+    // category from URL
+    const { category } = req.query;
+
+    let filter = {};
+
+    // If category exists
+    if (category) {
+
+      filter.category = category;
+
+    }
+
+    const posts = await Post.find(filter)
+      .populate("category", "name")
+      .populate("tags", "name")
+      .populate("author", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
+
 
 
 
