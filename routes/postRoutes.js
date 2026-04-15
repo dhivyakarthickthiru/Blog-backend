@@ -9,7 +9,7 @@ const {
   getPostById,
   updatePost,
   deletePost,
-  incrementPostViews,
+  getMostViewedPosts,
   addBookmark,
   removeBookmark,
   getMyBookmarks,
@@ -73,6 +73,11 @@ router.get("/:id/analytics",getPostAnalytics);
 router.put("/:id/share",incrementShare);
 
 
+// Increment views
+
+router.get("/most-viewed",getMostViewedPosts);
+
+
 // Get single post
 
 router.get("/:id", getPostById);
@@ -90,9 +95,7 @@ router.delete("/:id", protect, deletePost);
 // EXTRA FEATURES
 // =============================
 
-// Increment views
 
-router.put("/:id/view", incrementPostViews);
 
 // Like post
 

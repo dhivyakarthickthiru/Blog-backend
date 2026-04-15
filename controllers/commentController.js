@@ -1,54 +1,144 @@
-const Comment = require("../models/Comment");
+const Comment =
+  require("../models/Comment");
+
+const Post =
+  require("../models/Post");
 
 
-// ADD COMMENT
+// CREATE COMMENT
 
-exports.createComment = async (req, res) => {
+exports.createComment =
+  async (req, res) => {
+
   try {
-    const { text, post } = req.body;
 
-    const comment = await Comment.create({
-      text,
+    console.log(
+      "BODY:",
+      req.body
+    );
+
+    console.log(
+      "USER:",
+      req.user
+    );
+
+    const {
+      content,
       post,
-      user: req.user._id
-    });
+       parentComment
+    } =
+      req.body;
 
-    res.status(201).json({
-      message: "Comment added",
+    // VALIDATION
+
+    if (!content) {
+
+      return res.status(400).json({
+        message:
+          "Comment text required"
+      });
+
+    }
+
+    if (!post) {
+
+      return res.status(400).json({
+        message:
+          "Post id required"
+      });
+
+    }
+
+    // CHECK POST
+
+    const postExists =
+      await Post.findById(
+        post
+      );
+
+    if (!postExists) {
+
+      return res.status(404).json({
+        message:
+          "Post not found"
+      });
+
+    }
+
+    // CREATE COMMENT
+
+    const comment =
+      await Comment.create({
+
+        text: content,   // IMPORTANT FIX
+
+        post,
+
+        user:
+          req.user._id,
+          parentComment:
+      parentComment || null
+  
+
+      });
+
+    res.status(201).json(
       comment
-    });
+    );
 
   } catch (error) {
+
+    console.log(
+      "CREATE COMMENT ERROR:"
+    );
+
+    console.log(error);
+
     res.status(500).json({
-      message: error.message
+      message:
+        error.message
     });
+
   }
+
 };
 
+exports.getComments =
+  async (req, res) => {
 
-
-// GET COMMENTS BY POST
-
-exports.getComments = async (req, res) => {
   try {
 
-    const comments = await Comment.find({
-      post: req.params.postId,
-      isApproved: true
-    })
-      .populate("user", "name")
-      .sort({ createdAt: -1 });
+    const comments =
+      await Comment.find({
 
-    res.json(comments);
+        post:
+          req.params.postId,
+
+        isApproved: true
+
+      })
+      .populate(
+        "user",
+        "name"
+      )
+      .sort({
+        createdAt: -1
+      });
+
+    res.json(
+      comments
+    );
 
   } catch (error) {
+
     res.status(500).json({
-      message: error.message
+      message:
+        error.message
     });
+
   }
+
 };
-
-
 
 // UPDATE COMMENT
 

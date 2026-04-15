@@ -4,12 +4,12 @@ const router = express.Router();
 
 const {createTag,getTags,updateTag,deleteTag} = require("../controllers/tagController");
 
-const {protect} = require("../middlewares/authMiddleware");
+const { adminOnly } = require("../middlewares/authMiddleware");
 
 
 // Create tag
 
-router.post("/",protect,createTag);
+router.post("/",adminOnly,createTag);
 
 
 // Get all tags
@@ -19,11 +19,11 @@ router.get("/",getTags);
 
 // Update tag
 
-router.put("/:id",protect,updateTag);
+router.put("/:id",adminOnly,updateTag);
 
 
 // Delete tag
 
-router.delete("/:id",protect,deleteTag);
+router.delete("/:id",adminOnly,deleteTag);
 
 module.exports = router;

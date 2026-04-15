@@ -190,35 +190,79 @@ exports.getMyPosts = async (req, res) => {
 };
 // 2️⃣ GET ALL POSTS
 // 2️⃣ GET ALL POSTS WITH CATEGORY FILTER
-
-exports.getPosts = async (req, res) => {
+exports.getPosts =
+  async (req, res) => {
 
   try {
 
     // category from URL
-    const { category } = req.query;
+    const { category } =
+      req.query;
 
     let filter = {};
 
     // If category exists
     if (category) {
 
-      filter.category = category;
+      filter.category =
+        category;
 
     }
 
-    const posts = await Post.find(filter)
-      .populate("category", "name")
-      .populate("tags", "name")
-      .populate("author", "name")
-      .sort({ createdAt: -1 });
+    const posts =
+      await Post.find(filter)
 
-    res.json(posts);
+        .populate(
+          "category",
+          "name"
+        )
+
+        .populate(
+          "tags",
+          "name"
+        )
+
+        .populate(
+          "author",
+          "name"
+        )
+
+        .sort({
+          createdAt: -1
+        })
+
+        .lean(); // IMPORTANT
+
+    // ADD COMMENTS COUNT
+
+    for (
+      let post of posts
+    ) {
+
+      const count =
+        await Comment.countDocuments({
+
+          post:
+            post._id
+
+        });
+
+      post.commentsCount =
+        count;
+
+    }
+
+    res.json(
+      posts
+    );
 
   } catch (error) {
 
     res.status(500).json({
-      message: error.message
+
+      message:
+        error.message
+
     });
 
   }
@@ -396,73 +440,121 @@ exports.deletePost = async (req, res) => {
 
 //increment views
 
-exports.incrementPostViews = async (req, res) => {
-  try {
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      {
-        $inc: { views: 1 }
-      },
-      {
-        returnDocument: "after"
-      }
-    );
 
-    if (!post) {
-      return res.status(404).json({
-        message: "Post not found"
-      });
-    }
+exports.getMostViewedPosts =
+  async (req, res) => {
+
+  try {
+
+    const posts =
+      await Post.find()
+
+        .sort({
+          views: -1
+        })
+
+        .limit(5)
+
+        .populate(
+          "author",
+          "name"
+        )
+
+        .select(
+          "title views image author"
+        );
 
     res.json({
-      message: "View counted",
-      views: post.views
+      success: true,
+      count: posts.length,
+      posts
     });
 
   } catch (error) {
+
+    console.log(
+      "Most viewed error:",
+      error
+    );
+
     res.status(500).json({
       message: error.message
     });
+
   }
+
 };
 
 //likes views
 
-exports.likePost = async (req, res) => {
+exports.likePost =
+  async (req, res) => {
+
   try {
 
-    const post = await Post.findById(req.params.id);
+    const post =
+      await Post.findById(
+        req.params.id
+      );
 
     if (!post) {
+
       return res.status(404).json({
-        message: "Post not found"
+        message:
+          "Post not found"
       });
+
     }
 
-    // Check if already liked
+    const userId =
+      req.user._id.toString();
 
-    if (post.likes.includes(req.user._id)) {
-      return res.status(400).json({
-        message: "You already liked this post"
+    const alreadyLiked =
+      post.likes.some(
+        (id) =>
+          id.toString() === userId
+      );
+
+    // If already liked
+    if (alreadyLiked) {
+
+      return res.json({
+        message:
+          "Already liked",
+        totalLikes:
+          post.likes.length
       });
+
     }
 
-    post.likes.push(req.user._id);
+    // Add like
+
+    post.likes.push(
+      req.user._id
+    );
 
     await post.save();
 
     res.json({
-      message: "Post liked",
-      totalLikes: post.likes.length
+
+      message:
+        "Post liked",
+
+      totalLikes:
+        post.likes.length
+
     });
 
   } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
-  }
-};
 
+    res.status(500).json({
+      message:
+        error.message
+    });
+
+  }
+
+};
 //unlike post
 
 exports.unlikePost = async (req, res) => {
@@ -694,72 +786,111 @@ exports.searchPosts = async (req, res) => {
 
 // GET POST ANALYTICS
 
-exports.getPostAnalytics = async (req, res) => {
+exports.getPostAnalytics =
+  async (req, res) => {
+
   try {
 
-    const postId = req.params.id;
+    const postId =
+      req.params.id;
 
-    const post = await Post.findById(postId);
+    const post =
+      await Post.findById(
+        postId
+      );
 
     if (!post) {
+
       return res.status(404).json({
-        message: "Post not found"
+        message:
+          "Post not found"
       });
+
     }
 
-    // Count comments
+    // ======================
+    // COUNT COMMENTS
+    // ======================
 
     const commentsCount =
       await Comment.countDocuments({
         post: postId
       });
 
+    // ======================
+    // RESPONSE
+    // ======================
+
     res.json({
 
-      views: post.views,
+      views:
+        post.views || 0,
 
-      likes: post.likes.length,
+      likes:
+        post.likes?.length || 0,
 
-      comments: commentsCount,
+      comments:
+        commentsCount || 0,
 
-      shares: post.shares
+      shares:
+        post.shares || 0
 
     });
 
   } catch (error) {
 
-    res.status(500).json({
-      message: error.message
-    });
-
-  }
-};
-
-// INCREMENT SHARE COUNT
-
-exports.incrementShare = async (req, res) => {
-  try {
-
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      {
-        $inc: { shares: 1 }
-      },
-      {
-        returnDocument: "after"
-      }
+    console.log(
+      "Analytics error:",
+      error
     );
 
+    res.status(500).json({
+      message:
+        error.message
+    });
+
+  }
+
+};
+// INCREMENT SHARE COUNT
+
+exports.incrementShare =
+  async (req, res) => {
+
+  try {
+
+    const post =
+      await Post.findById(
+        req.params.id
+      );
+
+    if (!post) {
+
+      return res.status(404).json({
+        message:
+          "Post not found"
+      });
+
+    }
+
+    post.shares += 1;
+
+    await post.save();
+
     res.json({
-      message: "Post shared successfully",
-      shares: post.shares
+
+      totalShares:
+        post.shares
+
     });
 
   } catch (error) {
 
     res.status(500).json({
-      message: error.message
+      message:
+        error.message
     });
 
   }
+
 };

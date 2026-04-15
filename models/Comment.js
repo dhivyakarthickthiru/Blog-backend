@@ -19,6 +19,15 @@ const commentSchema = new mongoose.Schema(
       required: true
     },
 
+      // NEW — reply support
+
+      parentComment: {
+        type:
+          mongoose.Schema.Types.ObjectId,
+        ref: "Comment",
+        default: null
+      },
+
     isApproved: {
       type: Boolean,
       default: true
