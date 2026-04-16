@@ -190,88 +190,79 @@ exports.getMyPosts = async (req, res) => {
 };
 // 2️⃣ GET ALL POSTS
 // 2️⃣ GET ALL POSTS WITH CATEGORY FILTER
-exports.getPosts =
-  async (req, res) => {
-
+exports.getPosts = async (req, res) => {
   try {
 
-    // category from URL
-    const { category } =
-      req.query;
+    const { category } = req.query;
 
     let filter = {};
 
-    // If category exists
     if (category) {
-
-      filter.category =
-        category;
-
+      filter.category = category;
     }
+
+    // user optional (safety)
+
+    let user = null;
+
+    if (req.user) {
+      user = await User.findById(req.user._id);
+    
+    }
+     console.log("USER BOOKMARKS:", user?.bookmarks); 
 
     const posts =
       await Post.find(filter)
+        .populate("category", "name")
+        .populate("tags", "name")
+        .populate("author", "name")
+        .sort({ createdAt: -1 })
+        .lean();
 
-        .populate(
-          "category",
-          "name"
-        )
+    // SINGLE LOOP (optimized)
 
-        .populate(
-          "tags",
-          "name"
-        )
+    for (let post of posts) {
 
-        .populate(
-          "author",
-          "name"
-        )
-
-        .sort({
-          createdAt: -1
-        })
-
-        .lean(); // IMPORTANT
-
-    // ADD COMMENTS COUNT
-
-    for (
-      let post of posts
-    ) {
+      // comments count
 
       const count =
         await Comment.countDocuments({
-
-          post:
-            post._id
-
+          post: post._id
         });
 
-      post.commentsCount =
-        count;
+      post.commentsCount = count;
+
+      // bookmarked check
+
+      if (user) {
+
+        const isBookmarked =
+          user.bookmarks.some(
+            (id) =>
+              id.toString() ===
+              post._id.toString()
+          );
+
+        post.bookmarked = isBookmarked;
+
+      } else {
+
+        post.bookmarked = false;
+
+      }
 
     }
 
-    res.json(
-      posts
-    );
+    res.json(posts);
 
   } catch (error) {
 
     res.status(500).json({
-
-      message:
-        error.message
-
+      message: error.message
     });
 
   }
-
 };
-
-
-
-
 // 3️⃣ GET SINGLE POST
 
 exports.getPostById = async (req, res) => {
@@ -632,10 +623,14 @@ exports.addBookmark = async (req, res) => {
     }
 
     // already bookmarked
+      const alreadyBookmarked =
+      user.bookmarks.some(
+        (id) => id.toString() === req.params.id
+      );
 
-    if (user.bookmarks.includes(req.params.id)) {
-      return res.status(400).json({
-        message: "Post already bookmarked"
+        if (alreadyBookmarked) {
+      return res.status(200).json({
+        message: "Already bookmarked"
       });
     }
 

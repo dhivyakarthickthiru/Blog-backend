@@ -214,6 +214,7 @@ exports.updateProfile = async (req, res) => {
 
 // GET MY PROFILE
 
+
 exports.getMyProfile = async (req, res) => {
   try {
 
@@ -221,7 +222,23 @@ exports.getMyProfile = async (req, res) => {
       req.user._id
     ).select("-password");
 
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // DEBUG
+    console.log("FULL USER:", user);
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      bio: user.bio,
+      profilePicture: user.profilePicture,
+      socialLinks: user.socialLinks
+    });
 
   } catch (error) {
 
@@ -231,8 +248,6 @@ exports.getMyProfile = async (req, res) => {
 
   }
 };
-
-
 
 const fs = require("fs");
 const path = require("path");
@@ -254,12 +269,14 @@ exports.uploadProfilePicture = async (req, res) => {
 
     // DELETE OLD IMAGE (if exists)
 
+    
     if (user.profilePicture) {
 
       const oldPath = path.join(
         __dirname,
         "..",
-        user.profilePicture
+        "uploads",
+        path.basename(user.profilePicture)
       );
 
       if (fs.existsSync(oldPath)) {
@@ -298,24 +315,22 @@ exports.uploadProfilePicture = async (req, res) => {
 
 
 
-
 exports.getAuthorPage = async (req, res) => {
   try {
 
     const authorId = req.params.id;
 
-    // 1️⃣ Get author details
+    console.log("AUTHOR ID:", authorId);
 
-    const author = await User.findById(authorId)
-      .select("-password");
+    const author = await User.findById(
+      authorId
+    ).select("-password");
 
     if (!author) {
       return res.status(404).json({
         message: "Author not found"
       });
     }
-
-    // 2️⃣ Get all posts by author
 
     const posts = await Post.find({
       author: authorId
