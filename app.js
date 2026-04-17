@@ -109,4 +109,9 @@ app.use(
   notificationRoutes
 );
 
+app.use(
+  "/api/admin",
+  require("./routes/adminRoutes")
+);
+
 module.exports = app;
