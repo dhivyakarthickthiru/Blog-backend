@@ -18,7 +18,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+      
 
+   
+   resetPasswordToken: {
+  type: String
+},
+
+resetPasswordExpire: {
+  type: Date
+}, 
    
     
     role: {
@@ -55,6 +64,13 @@ categorySubscriptions: [
   {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category"
+  }
+],
+
+authorSubscriptions: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
   }
 ],
 bio: {

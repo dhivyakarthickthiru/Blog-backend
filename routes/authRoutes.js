@@ -9,6 +9,8 @@ const {
   logoutUser,
   getMe,
   changePassword,
+  forgotPassword,
+  resetPassword,
   updateProfile,
   getMyProfile,
    uploadProfilePicture,
@@ -66,8 +68,22 @@ router.get(
 router.put(
   "/change-password",
   protect,
-  changePassword
+  changePassword,
+  
+  
 );
+
+router.post(
+  "/forgot-password",
+  forgotPassword
+);
+
+
+router.put(
+  "/reset-password/:token",
+  resetPassword
+);
+
 
 
 // GET PROFILE

@@ -24,6 +24,11 @@ const categorySubscriptionRoutes =
 const subscriptionRoutes =
   require("./routes/subscriptionRoutes");
 
+const authorSubscriptionRoutes =
+  require(
+    "./routes/authorSubscriptionRoutes"
+  );  
+
 const notificationRoutes =
   require("./routes/notificationRoutes");
 
@@ -86,6 +91,12 @@ app.use(
 app.use(
   "/api/category-subscriptions",
   categorySubscriptionRoutes
+);
+
+
+app.use(
+  "/api/author-subscriptions",
+  authorSubscriptionRoutes
 );
 
 app.use(

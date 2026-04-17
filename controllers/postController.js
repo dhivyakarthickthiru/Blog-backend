@@ -85,7 +85,7 @@ exports.createPost = async (req, res) => {
 
     const subscribers =
       await User.find({
-        subscriptions:
+        authorSubscriptions:
           req.user._id
       });
 
@@ -354,7 +354,7 @@ exports.updatePost = async (req, res) => {
 
     const subscribers =
       await User.find({
-        subscriptions:
+        authorSubscriptions:
           updatedPost.author
       });
 
