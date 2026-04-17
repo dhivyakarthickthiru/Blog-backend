@@ -1,23 +1,46 @@
-const express = require("express");
+const express =
+  require("express");
 
-const router = express.Router();
+const router =
+  express.Router();
 
 const {
   protect,
   adminOnly
-} = require("../middlewares/authMiddleware");
+} = require(
+  "../middlewares/authMiddleware"
+);
+
+const {
+  getAdminStats,
+  deletePostByAdmin
+} = require(
+  "../controllers/adminController"
+);
+
+
+// ===============================
+// GET ADMIN DASHBOARD STATS
+// ===============================
 
 router.get(
-  "/dashboard",
+  "/stats",
   protect,
   adminOnly,
-  (req, res) => {
-
-    res.json({
-      message: "Admin dashboard access granted"
-    });
-
-  }
+  getAdminStats
 );
+
+
+// ===============================
+// DELETE ANY POST
+// ===============================
+
+router.delete(
+  "/post/:id",
+  protect,
+  adminOnly,
+  deletePostByAdmin
+);
+
 
 module.exports = router;
