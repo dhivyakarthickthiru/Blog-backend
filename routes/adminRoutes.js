@@ -12,34 +12,70 @@ const {
 );
 
 const {
-  getAdminStats,
-  deletePostByAdmin
+  getAllPosts,
+  deletePostByAdmin,
+  getAllUsers,
+  deleteUser,
+  getMostViewedPosts
+
 } = require(
   "../controllers/adminController"
 );
 
 
-// ===============================
-// GET ADMIN DASHBOARD STATS
-// ===============================
+// ============================
+// GET ALL POSTS
+// ============================
 
 router.get(
-  "/stats",
+  "/posts",
   protect,
   adminOnly,
-  getAdminStats
+  getAllPosts
 );
 
 
-// ===============================
-// DELETE ANY POST
-// ===============================
+// ============================
+// DELETE POST
+// ============================
 
 router.delete(
   "/post/:id",
   protect,
   adminOnly,
   deletePostByAdmin
+);
+
+
+// ============================
+// GET ALL USERS
+// ============================
+
+router.get(
+  "/users",
+  protect,
+  adminOnly,
+  getAllUsers
+
+);
+
+
+// ============================
+// DELETE USER
+// ============================
+
+router.delete(
+  "/user/:id",
+  protect,
+  adminOnly,
+  deleteUser
+);
+
+router.get(
+  "/most-viewed",
+  protect,
+  adminOnly,
+  getMostViewedPosts
 );
 
 

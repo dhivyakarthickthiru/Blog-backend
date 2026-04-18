@@ -48,7 +48,9 @@ exports.registerUser = async (req, res) => {
 // LOGIN
 
 exports.loginUser = async (req, res) => {
+
   try {
+
     const { email, password } =
       req.body;
 
@@ -56,9 +58,11 @@ exports.loginUser = async (req, res) => {
       await User.findOne({ email });
 
     if (!user) {
+
       return res.status(400).json({
         message: "Invalid email"
       });
+
     }
 
     const isMatch =
@@ -68,30 +72,52 @@ exports.loginUser = async (req, res) => {
       );
 
     if (!isMatch) {
+
       return res.status(400).json({
         message: "Invalid password"
       });
+
     }
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token =
+      jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+    // IMPORTANT — return role
 
     res.json({
-      message: "Login successful",
-      token
+
+      message:
+        "Login successful",
+
+      token,
+
+      user: {
+
+        _id: user._id,
+
+        name: user.name,
+
+        email: user.email,
+
+        role: user.role
+
+      }
+
     });
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
+
   }
+
 };
-
-
 
 // LOGOUT
 

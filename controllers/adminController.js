@@ -1,63 +1,33 @@
 const User = require("../models/User");
 const Post = require("../models/Post");
-const Comment = require("../models/Comment");
-const Category = require("../models/Category");
 
+// ============================
+// GET ALL POSTS (ADMIN)
+// ============================
 
-// ===============================
-// GET ADMIN DASHBOARD STATS
-// ===============================
-
-exports.getAdminStats = async (
+exports.getAllPosts = async (
   req,
   res
 ) => {
 
   try {
 
-    // Count users
+    const posts =
+      await Post.find()
+        .populate(
+          "author",
+          "name email"
+        )
+        .sort({
+          createdAt: -1
+        });
 
-    const totalUsers =
-      await User.countDocuments();
-
-    // Count posts
-
-    const totalPosts =
-      await Post.countDocuments();
-
-    // Count comments
-
-    const totalComments =
-      await Comment.countDocuments();
-
-    // Count categories
-
-    const totalCategories =
-      await Category.countDocuments();
-
-    // Send response
-
-    res.json({
-
-      totalUsers,
-
-      totalPosts,
-
-      totalComments,
-
-      totalCategories
-
-    });
+    res.json(posts);
 
   } catch (error) {
 
-    console.log(error);
-
     res.status(500).json({
-
-      message:
-        error.message
-
+      message: error.message
     });
 
   }
@@ -66,9 +36,9 @@ exports.getAdminStats = async (
 
 
 
-// ===============================
+// ============================
 // DELETE ANY POST (ADMIN)
-// ===============================
+// ============================
 
 exports.deletePostByAdmin =
   async (req, res) => {
@@ -83,10 +53,8 @@ exports.deletePostByAdmin =
     if (!post) {
 
       return res.status(404).json({
-
         message:
           "Post not found"
-
       });
 
     }
@@ -94,19 +62,109 @@ exports.deletePostByAdmin =
     await post.deleteOne();
 
     res.json({
-
       message:
-        "Post deleted by admin"
-
+        "Post deleted successfully"
     });
 
   } catch (error) {
 
     res.status(500).json({
-
       message:
         error.message
+    });
 
+  }
+
+};
+
+
+
+// ============================
+// GET ALL USERS (ADMIN)
+// ============================
+
+exports.getAllUsers =
+  async (req, res) => {
+
+  try {
+
+    const users =
+      await User.find()
+        .select("-password");
+
+    res.json(users);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message:
+        error.message
+    });
+
+  }
+
+};
+
+
+
+// ============================
+// DELETE USER (ADMIN)
+// ============================
+
+exports.deleteUser =
+  async (req, res) => {
+
+  try {
+
+    const user =
+      await User.findById(
+        req.params.id
+      );
+
+    if (!user) {
+
+      return res.status(404).json({
+        message:
+          "User not found"
+      });
+
+    }
+
+    await user.deleteOne();
+
+    res.json({
+      message:
+        "User deleted successfully"
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message:
+        error.message
+    });
+
+  }
+
+};
+
+exports.getMostViewedPosts =
+  async (req, res) => {
+
+  try {
+
+    const posts =
+      await Post.find()
+        .populate("author", "name")
+        .sort({ views: -1 })
+        .limit(5);
+
+    res.json(posts);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
     });
 
   }
