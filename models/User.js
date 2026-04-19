@@ -38,12 +38,15 @@ resetPasswordExpire: {
 
 
     
-   bookmarks: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Post"
-  }
-     ], 
+   bookmarks: {
+  type: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post"
+    }
+  ],
+  default: []
+},  
 
      
     subscriptions: [

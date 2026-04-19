@@ -9,6 +9,7 @@ const {
   getPostById,
   updatePost,
   deletePost,
+  getDraftPosts,
   getMostViewedPosts,
   addBookmark,
   removeBookmark,
@@ -78,9 +79,20 @@ router.put("/:id/share",incrementShare);
 router.get("/most-viewed",getMostViewedPosts);
 
 
+router.get(
+  "/drafts",
+  protect,
+  getDraftPosts
+);
+
+
+
 // Get single post
 
 router.get("/:id", getPostById);
+
+
+
 
 // Update post
 
@@ -89,6 +101,8 @@ router.put("/:id", protect, upload.single("image"), updatePost);
 // Delete post
 
 router.delete("/:id", protect, deletePost);
+
+
 
 
 // =============================

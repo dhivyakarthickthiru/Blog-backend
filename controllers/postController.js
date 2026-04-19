@@ -195,7 +195,10 @@ exports.getPosts = async (req, res) => {
 
     const { category } = req.query;
 
-    let filter = {};
+    let filter = {
+       status: "published"
+
+    };
 
     if (category) {
       filter.category = category;
@@ -236,20 +239,20 @@ exports.getPosts = async (req, res) => {
 
       if (user) {
 
-        const isBookmarked =
-          user.bookmarks.some(
-            (id) =>
-              id.toString() ===
-              post._id.toString()
-          );
+  const isBookmarked =
+    user?.bookmarks?.some(
+      (id) =>
+        id.toString() ===
+        post._id.toString()
+    ) || false;
 
-        post.bookmarked = isBookmarked;
+  post.bookmarked = isBookmarked;
 
-      } else {
+} else {
 
-        post.bookmarked = false;
+  post.bookmarked = false;
 
-      }
+}
 
     }
 
@@ -888,4 +891,33 @@ exports.incrementShare =
 
   }
 
+};
+exports.getDraftPosts = async (req, res) => {
+  try {
+
+    console.log("REQ USER:", req.user);
+    console.log("USER ID:", req.user._id);
+
+    const drafts = await Post.find({
+      author: req.user._id,
+      status: "draft"
+    })
+    .populate("category", "name")
+    .populate("tags", "name")
+    .populate("author", "name")
+    .sort({ createdAt: -1 });
+
+    console.log("DRAFT COUNT:", drafts.length);
+
+    res.json(drafts);
+
+  } catch (error) {
+
+    console.log("DRAFT ERROR:", error);
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
 };
