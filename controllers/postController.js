@@ -921,3 +921,37 @@ exports.getDraftPosts = async (req, res) => {
 
   }
 };
+
+
+exports.publishPost = async (req, res) => {
+  try {
+
+    const post = await Post.findById(
+      req.params.id
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    // Change status
+
+    post.status = "published";
+
+    await post.save();
+
+    res.json({
+      message: "Post published successfully",
+      post
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};

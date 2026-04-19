@@ -10,6 +10,7 @@ const {
   updatePost,
   deletePost,
   getDraftPosts,
+  publishPost,
   getMostViewedPosts,
   addBookmark,
   removeBookmark,
@@ -83,6 +84,13 @@ router.get(
   "/drafts",
   protect,
   getDraftPosts
+);
+
+
+router.put(
+  "/:id/publish",
+  protect,
+  publishPost
 );
 
 
