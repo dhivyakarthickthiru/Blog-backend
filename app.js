@@ -38,7 +38,16 @@ const app = express();
    GLOBAL MIDDLEWARES
 ========================= */
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      
+      "https://userblog.netlify.app"
+    ],
+    credentials: true
+  })
+);
 
 /* Parse JSON */
 
