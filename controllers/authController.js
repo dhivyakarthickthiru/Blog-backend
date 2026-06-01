@@ -369,45 +369,110 @@ exports.resetPassword = async (req, res) => {
 // UPDATE PROFILE
 
 exports.updateProfile = async (req, res) => {
+
   try {
 
-    const {
-      name,
-      bio,
-      profilePicture,
-      socialLinks
-    } = req.body;
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
+    const user =
+      await User.findById(
+        req.user._id
+      );
 
-      {
-        name,
-        bio,
-        profilePicture,
-        socialLinks
-      },
+    if (!user) {
 
-      {
-        returnDocument: "after"
+      return res.status(404).json({
+        message: "User not found"
+      });
+
+    }
+
+    // NAME
+
+    if (req.body?.name) {
+
+      user.name =
+        req.body.name;
+
+    }
+
+    // BIO
+
+    if (req.body?.bio) {
+
+      user.bio =
+        req.body.bio;
+
+    }
+
+    // SOCIAL LINKS
+
+    let socialLinks = {};
+
+    if (req.body?.socialLinks) {
+
+      try {
+
+        socialLinks =
+          typeof req.body.socialLinks === "string"
+            ? JSON.parse(
+                req.body.socialLinks
+              )
+            : req.body.socialLinks;
+
+      } catch {
+
+        socialLinks = {};
+
       }
 
-    ).select("-password");
+    }
+
+    user.socialLinks = socialLinks;
+
+    // PROFILE IMAGE
+
+    if (req.file) {
+
+      const baseUrl =
+        process.env.BASE_URL ||
+        `${req.protocol}://${req.get("host")}`;
+
+      user.profilePicture =
+  `${baseUrl}/uploads/${req.file.filename}`;
+      
+
+    }
+
+    await user.save();
 
     res.json({
-      message: "Profile updated successfully",
-      user
+
+      message:
+        "Profile updated",
+
+      user:user
+
     });
 
   } catch (error) {
 
+    console.log(
+      "PROFILE UPDATE ERROR:",
+      error
+    );
+
     res.status(500).json({
-      message: error.message
+
+      message:
+        error.message
+
     });
 
   }
-};
 
+};
 // GET MY PROFILE
 
 
@@ -432,6 +497,7 @@ exports.getMyProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       bio: user.bio,
+     
       profilePicture: user.profilePicture,
       socialLinks: user.socialLinks
     });
@@ -495,7 +561,7 @@ exports.uploadProfilePicture = async (req, res) => {
     res.json({
       message:
         "Profile picture updated",
-      profilePicture:
+      profileImage:
         imagePath
     });
 
@@ -511,41 +577,66 @@ exports.uploadProfilePicture = async (req, res) => {
 
 
 
-exports.getAuthorPage = async (req, res) => {
+exports.savePost = async (req, res) => {
+
   try {
 
-    const authorId = req.params.id;
+    const userId = req.user.id;
 
-    console.log("AUTHOR ID:", authorId);
+    const postId = req.params.id;
 
-    const author = await User.findById(
-      authorId
-    ).select("-password");
+    const user =
+      await User.findById(userId);
 
-    if (!author) {
-      return res.status(404).json({
-        message: "Author not found"
+    const alreadySaved =
+      user.savedPosts.some(
+        (id) =>
+          id.toString() === postId
+      );
+
+    if (alreadySaved) {
+
+      return res.status(400).json({
+        message: "Already saved"
       });
+
     }
 
-    const posts = await Post.find({
-      author: authorId
-    })
-      .populate("category", "name")
-      .populate("tags", "name")
-      .sort({ createdAt: -1 });
+    user.savedPosts.push(postId);
+
+    await user.save();
 
     res.json({
-      author,
-      totalPosts: posts.length,
-      posts
+      message:
+        "Post saved successfully"
     });
 
-  } catch (error) {
+  } catch (err) {
 
     res.status(500).json({
-      message: error.message
+      message: err.message
+    });
+
+  }
+
+};
+exports.getSavedPosts = async (req, res) => {
+  try {
+
+    const user =
+      await User.findById(req.user.id)
+      .populate("savedPosts");
+
+    res.json(user.savedPosts);
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message
     });
 
   }
 };
+
+
+

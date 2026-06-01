@@ -6,6 +6,7 @@ const {
   createPost,
   getMyPosts,
   getPosts,
+  getAuthorPage,
   getPostById,
   updatePost,
   deletePost,
@@ -20,7 +21,9 @@ const {
   unlikePost,
   getLikesCount,
   getPostAnalytics,
-  incrementShare
+  incrementShare,
+  savePost,
+  getSavedPosts
 } = require("../controllers/postController");
 
 const {
@@ -67,6 +70,12 @@ router.get(
 
 router.get("/", getPosts);
 
+router.get(
+  "/author/:id",
+  getAuthorPage
+);
+
+
 router.get("/:id/analytics",getPostAnalytics);
 
 
@@ -97,7 +106,6 @@ router.put(
 
 // Get single post
 
-router.get("/:id", getPostById);
 
 
 
@@ -138,6 +146,22 @@ router.post("/:id/bookmark", protect, addBookmark);
 // Remove bookmark
 
 router.delete("/:id/bookmark", protect, removeBookmark);
+
+router.post(
+  "/save/:id",
+  protect,
+  savePost
+);
+
+
+router.get(
+  "/saved-posts",
+  protect,
+  getSavedPosts
+);
+
+
+router.get("/:id", getPostById);
 
 
 

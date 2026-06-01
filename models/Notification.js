@@ -19,6 +19,16 @@ const notificationSchema =
         ref: "Post"
       },
 
+      type: {
+        type: String,
+        enum: [
+          "new_post",
+          "update_post",
+          "comment",
+          "subscribe"
+        ]
+      },
+
       message: {
         type: String
       },
@@ -32,7 +42,6 @@ const notificationSchema =
       timestamps: true
     }
   );
-
 module.exports =
   mongoose.model(
     "Notification",

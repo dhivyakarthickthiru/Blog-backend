@@ -56,10 +56,18 @@ exports.createPost = async (req, res) => {
     // IMAGE HANDLING
     // =========================
 
-    const image =
-      req.file
-        ? req.file.filename
-        : "";
+    let image = "";
+
+    if (req.file) {
+
+      const baseUrl =
+        process.env.BASE_URL ||
+        `${req.protocol}://${req.get("host")}`;
+
+      image =
+        `${baseUrl}/uploads/${req.file.filename}`;
+
+    }
 
     // =========================
     // CREATE POST
@@ -74,8 +82,7 @@ exports.createPost = async (req, res) => {
         tags,
         status,
         image,
-        author:
-          req.user._id
+        author: req.user._id
 
       });
 
@@ -89,15 +96,38 @@ exports.createPost = async (req, res) => {
           req.user._id
       });
 
-    const notifications =
-      subscribers
-        .filter(
-          (subscriber) =>
-            subscriber._id.toString() !==
-            req.user._id.toString()
-        )
-        .map(
-          (subscriber) => ({
+    // LOOP subscribers
+
+    for (let subscriber of subscribers) {
+
+      // skip self
+
+      if (
+        subscriber._id.toString() !==
+        req.user._id.toString()
+      ) {
+
+        // check duplicate notification
+
+        const exists =
+          await Notification.findOne({
+
+            recipient:
+              subscriber._id,
+
+            post:
+              post._id,
+
+            type:
+              "new_post"
+
+          });
+
+        // create notification only if not exists
+
+        if (!exists) {
+
+          await Notification.create({
 
             recipient:
               subscriber._id,
@@ -109,18 +139,16 @@ exports.createPost = async (req, res) => {
               post._id,
 
             message:
-              "New post from user you subscribed"
+              "New post from user you subscribed",
 
-          })
-        );
+            type:
+              "new_post"
 
-    if (
-      notifications.length > 0
-    ) {
+          });
 
-      await Notification.insertMany(
-        notifications
-      );
+        }
+
+      }
 
     }
 
@@ -154,7 +182,6 @@ exports.createPost = async (req, res) => {
 
   }
 };
-
 
 // GET MY POSTS
 
@@ -196,37 +223,35 @@ exports.getPosts = async (req, res) => {
     const { category } = req.query;
 
     let filter = {
-       status: "published"
-
+      status: "published"
     };
 
     if (category) {
       filter.category = category;
     }
 
-    // user optional (safety)
-
     let user = null;
 
-    if (req.user) {
-      user = await User.findById(req.user._id);
-    
+    if (req.user?._id) {
+      user = await User
+        .findById(req.user._id)
+        .lean();
     }
-     console.log("USER BOOKMARKS:", user?.bookmarks); 
 
     const posts =
       await Post.find(filter)
         .populate("category", "name")
-        .populate("tags", "name")
-        .populate("author", "name")
-        .sort({ createdAt: -1 })
+        
+        .populate(
+          "author",
+          "name profilePicture"
+        )
+        .sort({
+          createdAt: -1
+        })
         .lean();
 
-    // SINGLE LOOP (optimized)
-
     for (let post of posts) {
-
-      // comments count
 
       const count =
         await Comment.countDocuments({
@@ -235,24 +260,12 @@ exports.getPosts = async (req, res) => {
 
       post.commentsCount = count;
 
-      // bookmarked check
-
-      if (user) {
-
-  const isBookmarked =
-    user?.bookmarks?.some(
-      (id) =>
-        id.toString() ===
-        post._id.toString()
-    ) || false;
-
-  post.bookmarked = isBookmarked;
-
-} else {
-
-  post.bookmarked = false;
-
-}
+      post.bookmarked =
+        user?.bookmarks?.some(
+          (id) =>
+            id.toString() ===
+            post._id.toString()
+        ) || false;
 
     }
 
@@ -269,27 +282,60 @@ exports.getPosts = async (req, res) => {
 // 3️⃣ GET SINGLE POST
 
 exports.getPostById = async (req, res) => {
+
   try {
-    const post = await Post.findById(req.params.id)
-      .populate("category", "name")
-      .populate("tags", "name")
-      .populate("author", "name");
+
+    const post =
+      await Post.findByIdAndUpdate(
+
+        req.params.id,
+
+        {
+          $inc: {
+            views: 1
+          }
+        },
+
+        {
+          new: true
+        }
+
+      )
+
+        .populate(
+          "category",
+          "name"
+        )
+
+        
+
+        .populate(
+          "author",
+          "name profileImage"
+        );
 
     if (!post) {
+
       return res.status(404).json({
         message: "Post not found"
       });
+
     }
+
+   
+    
 
     res.json(post);
 
   } catch (error) {
+
     res.status(500).json({
       message: error.message
     });
-  }
-};
 
+  }
+
+};
 
 
 // 4️⃣ UPDATE POST (Owner OR Admin)
@@ -334,7 +380,9 @@ exports.updatePost = async (req, res) => {
       tags = [tags];
     }
 
-    // Update post
+    // =========================
+    // UPDATE POST
+    // =========================
 
     const updatedPost =
       await Post.findByIdAndUpdate(
@@ -347,7 +395,7 @@ exports.updatePost = async (req, res) => {
           status
         },
         {
-          returnDocument: "after"
+          new: true
         }
       );
 
@@ -361,27 +409,65 @@ exports.updatePost = async (req, res) => {
           updatedPost.author
       });
 
-    const notifications =
-      subscribers
-        .filter(
-          (subscriber) =>
-            subscriber._id.toString() !==
-            req.user._id.toString()
-        )
-        .map((subscriber) => ({
-          recipient:
-            subscriber._id,
-          sender: req.user._id,
-          post: updatedPost._id,
-          message:
-            "Post updated by subscribed user"
-        }));
+    // LOOP subscribers
 
-    if (notifications.length > 0) {
-      await Notification.insertMany(
-        notifications
-      );
+    for (let subscriber of subscribers) {
+
+      // Skip self
+
+      if (
+        subscriber._id.toString() !==
+        req.user._id.toString()
+      ) {
+
+        // Check duplicate notification
+
+        const exists =
+          await Notification.findOne({
+
+            recipient:
+              subscriber._id,
+
+            post:
+              updatedPost._id,
+
+            type:
+              "update_post"
+
+          });
+
+        // Create notification only if not exists
+
+        if (!exists) {
+
+          await Notification.create({
+
+            recipient:
+              subscriber._id,
+
+            sender:
+              req.user._id,
+
+            post:
+              updatedPost._id,
+
+            message:
+              "Post updated by subscribed user",
+
+            type:
+              "update_post"
+
+          });
+
+        }
+
+      }
+
     }
+
+    // =========================
+    // RESPONSE
+    // =========================
 
     res.json({
       message: "Post updated",
@@ -396,7 +482,6 @@ exports.updatePost = async (req, res) => {
 
   }
 };
-
 // 5️⃣ DELETE POST (Owner OR Admin)
 
 exports.deletePost = async (req, res) => {
@@ -604,10 +689,14 @@ exports.getLikesCount = async (req, res) => {
     });
   }
 };
+//add bookmark
+
 exports.addBookmark = async (req, res) => {
   try {
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -615,9 +704,9 @@ exports.addBookmark = async (req, res) => {
       });
     }
 
-    // check post exists
-
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(
+      req.params.id
+    );
 
     if (!post) {
       return res.status(404).json({
@@ -625,38 +714,57 @@ exports.addBookmark = async (req, res) => {
       });
     }
 
-    // already bookmarked
-      const alreadyBookmarked =
+    // SAFETY
+    if (!user.bookmarks) {
+      user.bookmarks = [];
+    }
+
+    const alreadyBookmarked =
       user.bookmarks.some(
-        (id) => id.toString() === req.params.id
+        (id) =>
+          id.toString() ===
+          req.params.id.toString()
       );
 
-        if (alreadyBookmarked) {
+    if (alreadyBookmarked) {
       return res.status(200).json({
-        message: "Already bookmarked"
+        message: "Already bookmarked",
+        totalBookmarks:
+          user.bookmarks.length
       });
     }
 
-    user.bookmarks.push(req.params.id);
+    user.bookmarks.push(
+      req.params.id
+    );
 
     await user.save();
 
     res.json({
-      message: "Post bookmarked successfully",
-      totalBookmarks: user.bookmarks.length
+      message:
+        "Post bookmarked successfully",
+      totalBookmarks:
+        user.bookmarks.length
     });
 
   } catch (error) {
+
+    console.log(error);
+
     res.status(500).json({
       message: error.message
     });
+
   }
 };
 
+//remove bookmark
 exports.removeBookmark = async (req, res) => {
   try {
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -664,16 +772,26 @@ exports.removeBookmark = async (req, res) => {
       });
     }
 
-    const beforeCount = user.bookmarks.length;
+    if (!user.bookmarks) {
+      user.bookmarks = [];
+    }
 
-    user.bookmarks = user.bookmarks.filter(
-      (postId) =>
-        postId.toString() !== req.params.id
-    );
+    const beforeCount =
+      user.bookmarks.length;
+
+    user.bookmarks =
+      user.bookmarks.filter(
+        (postId) =>
+          postId.toString() !==
+          req.params.id.toString()
+      );
 
     await user.save();
 
-    if (beforeCount === user.bookmarks.length) {
+    if (
+      beforeCount ===
+      user.bookmarks.length
+    ) {
       return res.status(400).json({
         message: "Bookmark not found"
       });
@@ -681,41 +799,47 @@ exports.removeBookmark = async (req, res) => {
 
     res.json({
       message: "Bookmark removed",
-      totalBookmarks: user.bookmarks.length
+      totalBookmarks:
+        user.bookmarks.length
     });
 
   } catch (error) {
+
+    console.log(error);
+
     res.status(500).json({
       message: error.message
     });
+
   }
 };
+
+//getbookmarks
 
 exports.getMyBookmarks = async (req, res) => {
   try {
 
-    const user = await User.findById(req.user._id)
-      .populate({
-        path: "bookmarks",
-        model: "Post",   // IMPORTANT
-        populate: [
-          {
-            path: "category",
-            model: "Category",
-            select: "name"
-          },
-          {
-            path: "author",
-            model: "User",
-            select: "name email"
-          },
-          {
-            path: "tags",
-            model: "Tag",
-            select: "name"
-          }
-        ]
-      });
+    const user = await User.findById(
+      req.user._id
+    ).populate({
+      path: "bookmarks",
+      model: "Post",
+      populate: [
+        {
+          path: "category",
+          select: "name"
+        },
+        {
+          path: "author",
+          select:
+            "name email profilePicture"
+        },
+        {
+          path: "tags",
+          select: "name"
+        }
+      ]
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -724,14 +848,20 @@ exports.getMyBookmarks = async (req, res) => {
     }
 
     res.json({
-      total: user.bookmarks.length,
-      bookmarks: user.bookmarks
+      total:
+        user.bookmarks?.length || 0,
+      bookmarks:
+        user.bookmarks || []
     });
 
   } catch (error) {
+
+    console.log(error);
+
     res.status(500).json({
       message: error.message
     });
+
   }
 };
 
@@ -767,7 +897,7 @@ exports.searchPosts = async (req, res) => {
       ]
     })
       .populate("category", "name")
-      .populate("tags", "name")
+      
       .populate("author", "name");
 
     res.json({
@@ -782,6 +912,189 @@ exports.searchPosts = async (req, res) => {
   }
 };
 
+
+//get author page
+
+const mongoose = require("mongoose");
+
+exports.getAuthorPage = async (req, res) => {
+
+  try {
+
+    console.log("=== AUTHOR PAGE API HIT ===");
+
+    const authorId = req.params.id;
+
+    console.log("AUTHOR ID:", authorId);
+
+    // =========================
+    // FIND AUTHOR
+    // =========================
+
+    const author = await User.findById(
+      authorId
+    ).select("-password");
+
+    if (!author) {
+
+      return res.status(404).json({
+        message: "Author not found"
+      });
+
+    }
+
+    // =========================
+    // FIND POSTS
+    // =========================
+
+    const posts = await Post.find({
+
+      author:
+        new mongoose.Types.ObjectId(
+          authorId
+        )
+
+    })
+
+      .populate(
+        "category",
+        "name"
+      )
+
+     
+
+      .populate(
+        "author",
+        "name email profilePicture"
+      )
+
+      .sort({
+        createdAt: -1
+      });
+
+    console.log(
+      "FOUND POSTS:",
+      posts.length
+    );
+
+    // =========================
+    // TOTAL LIKES
+    // =========================
+
+    const totalLikes =
+      posts.reduce(
+
+        (acc, post) =>
+
+          acc +
+          (post.likes?.length || 0),
+
+        0
+
+      );
+
+    // =========================
+    // TOTAL VIEWS
+    // =========================
+
+    const totalViews =
+      posts.reduce(
+
+        (acc, post) =>
+
+          acc +
+          (post.views || 0),
+
+        0
+
+      );
+
+    // =========================
+    // TOTAL SHARES
+    // =========================
+
+    const totalShares =
+      posts.reduce(
+
+        (acc, post) =>
+
+          acc +
+          (post.shares || 0),
+
+        0
+
+      );
+
+    // =========================
+    // TOTAL COMMENTS
+    // =========================
+
+    let totalComments = 0;
+
+    for (let post of posts) {
+
+      const commentsCount =
+        await Comment.countDocuments({
+
+          post: post._id
+
+        });
+
+      // ADD COMMENT COUNT
+      totalComments += commentsCount;
+
+      // OPTIONAL
+      // FRONTEND POST CARD USE
+
+      post._doc.commentsCount =
+        commentsCount;
+
+    }
+
+    // =========================
+    // RESPONSE
+    // =========================
+
+    res.json({
+
+      author: {
+
+        ...author.toObject(),
+
+        totalLikes,
+        totalViews,
+        totalComments,
+        totalShares
+
+      },
+
+      totalPosts:
+        posts.length,
+
+      totalViews,
+
+      posts
+
+    });
+
+  } catch (error) {
+
+    console.log(
+      "AUTHOR PAGE ERROR:"
+    );
+
+    console.log(error);
+
+    res.status(500).json({
+
+      message:
+        error.message
+
+    });
+
+  }
+
+};
 // GET POST ANALYTICS
 
 exports.getPostAnalytics =
@@ -903,7 +1216,7 @@ exports.getDraftPosts = async (req, res) => {
       status: "draft"
     })
     .populate("category", "name")
-    .populate("tags", "name")
+    
     .populate("author", "name")
     .sort({ createdAt: -1 });
 
@@ -955,3 +1268,120 @@ exports.publishPost = async (req, res) => {
 
   }
 };
+
+exports.savePost =
+  async (req, res) => {
+
+    try {
+
+      const user =
+        await User.findById(
+          req.user._id
+        );
+
+      if (!user) {
+
+        return res.status(404).json({
+          message: "User not found"
+        });
+
+      }
+
+      // SAFETY
+
+      if (!user.savedPosts) {
+
+        user.savedPosts = [];
+
+      }
+
+      const postId =
+        req.params.id;
+
+      const alreadySaved =
+        user.savedPosts.some(
+
+          (id) =>
+
+            id.toString() ===
+            postId.toString()
+
+        );
+
+      if (alreadySaved) {
+
+        return res.status(400).json({
+
+          message:
+            "Post already saved"
+
+        });
+
+      }
+
+      user.savedPosts.push(
+        postId
+      );
+
+      await user.save();
+
+      res.json({
+
+        message:
+          "Post saved successfully"
+
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        message:
+          error.message
+
+      });
+
+    }
+
+  };
+
+ exports.getSavedPosts =
+  async (req, res) => {
+
+    try {
+
+      const user =
+        await User.findById(
+          req.user._id
+        ).populate(
+          "savedPosts"
+        );
+
+      if (!user) {
+
+        return res.status(404).json({
+          message: "User not found"
+        });
+
+      }
+
+      res.json(
+        user.savedPosts || []
+      );
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        message:
+          error.message
+
+      });
+
+    }
+
+  }; 

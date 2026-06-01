@@ -12,13 +12,22 @@ const JWT_SECRET=process.env.JWT_SECRET || 'macbook';
 
 //const NODE_ENV = process.env.NODE_ENV || 'development';
 
+const EMAIL_USER =
+  process.env.EMAIL_USER;
+
+const EMAIL_PASS =
+  process.env.EMAIL_PASS;
+
+
 
 
 
 module.exports={
     MONGODB_URI,
     PORT,
-    JWT_SECRET
+    JWT_SECRET,
+     EMAIL_USER,
+     EMAIL_PASS
     
     
 }

@@ -4,6 +4,9 @@ const Comment =
 const Post =
   require("../models/Post");
 
+const sendEmail =
+  require("../utils/mail");  
+
 
 // CREATE COMMENT
 
@@ -54,7 +57,7 @@ exports.createComment =
     const postExists =
       await Post.findById(
         post
-      );
+      ).populate("author");
 
     if (!postExists) {
 
@@ -81,6 +84,23 @@ exports.createComment =
   
 
       });
+
+
+      // ADD HERE 👇
+
+
+   
+
+await sendEmail(
+
+  postExists.author.email,
+
+  "New Comment",
+
+  "Someone commented 😄"
+
+);
+      
 
     res.status(201).json(
       comment

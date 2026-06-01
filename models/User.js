@@ -38,15 +38,7 @@ resetPasswordExpire: {
 
 
     
-   bookmarks: {
-  type: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Post"
-    }
-  ],
-  default: []
-},  
+   
 
      
     subscriptions: [
@@ -103,7 +95,22 @@ socialLinks: {
     type: String,
     default: ""
   }
-}
+},
+
+
+ notifications: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Notification"
+  }
+],
+ 
+ savedPosts: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Post"
+  }
+]
 
 
   },

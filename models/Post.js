@@ -61,8 +61,17 @@ const postSchema = new mongoose.Schema(
  shares: {
   type: Number,
   default: 0
-} 
+} ,
 
+ 
+
+bookmarks: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: []
+  }
+]
     
   },
   {

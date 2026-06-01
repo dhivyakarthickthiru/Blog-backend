@@ -30,7 +30,7 @@ const fileFilter =
   (req, file, cb) => {
 
     const allowed =
-      /jpg|jpeg|png/;
+        /jpg|jpeg|png|webp/;
 
     const ext =
       allowed.test(

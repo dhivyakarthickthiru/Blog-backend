@@ -1,56 +1,90 @@
-const Notification = require("../models/Notification");
-
+const Notification =
+  require("../models/Notification");
 
 // GET MY NOTIFICATIONS
 
-exports.getMyNotifications = async (req, res) => {
-  try {
+exports.getMyNotifications =
+  async (req, res) => {
 
-    const notifications =
-      await Notification.find({
-        recipient: req.user._id
-      })
-        .populate("sender", "name")
-        .populate("post", "title")
-        .sort({ createdAt: -1 });
+    try {
 
-    res.json({
-      total: notifications.length,
-      notifications
-    });
+      const notifications =
+        await Notification.find({
+          recipient:
+            req.user._id
+        })
+          .sort({
+            createdAt: -1
+          })
+          .limit(20);
 
-  } catch (error) {
+      res.json({
+        total:
+          notifications.length,
+        notifications
+      });
 
-    res.status(500).json({
-      message: error.message
-    });
+    } catch (error) {
 
-  }
+      console.log(error);
+
+      res.status(500).json({
+        message:
+          error.message
+      });
+
+    }
+
 };
-
 
 // MARK AS READ
 
-exports.markAsRead = async (req, res) => {
-  try {
+exports.markAsRead =
+  async (req, res) => {
 
-    const notification =
-      await Notification.findByIdAndUpdate(
-        req.params.id,
-        { isRead: true },
-        { returnDocument: "after" }
-      );
+    try {
 
-    res.json({
-      message: "Notification marked as read",
-      notification
-    });
+      const notification =
+        await Notification.findOneAndUpdate(
+          {
+            _id: req.params.id,
+            recipient:
+              req.user._id
+          },
+          {
+            isRead: true
+          },
+          {
+            new: true
+          }
+        );
 
-  } catch (error) {
+      if (!notification) {
 
-    res.status(500).json({
-      message: error.message
-    });
+        return res
+          .status(404)
+          .json({
+            message:
+              "Notification not found"
+          });
 
-  }
+      }
+
+      res.json({
+        message:
+          "Notification marked as read",
+        notification
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        message:
+          error.message
+      });
+
+    }
+
 };

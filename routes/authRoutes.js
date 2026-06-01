@@ -14,7 +14,9 @@ const {
   updateProfile,
   getMyProfile,
    uploadProfilePicture,
-   getAuthorPage
+    savePost,
+    getSavedPosts,
+   
 
 
   
@@ -99,20 +101,30 @@ router.get(
 router.put(
   "/profile",
   protect,
+  upload.single("profileImage"),
   updateProfile
 );
 
 router.put(
   "/upload-profile-picture",
   protect,
-  upload.single("image"),
+  upload.single("profileImage"),
   uploadProfilePicture
 );
 
 
-router.get(
-  "/authors/:id",
-  getAuthorPage
+router.post(
+  "/save/:id",
+  protect,
+  savePost
 );
+
+router.get(
+  "/saved-posts",
+  protect,
+  getSavedPosts
+);
+
+
 
 module.exports = router;
