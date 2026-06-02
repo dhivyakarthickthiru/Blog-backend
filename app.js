@@ -68,6 +68,35 @@ app.use(
   express.static("uploads")
 );
 
+// ADD HERE 👇
+
+app.get("/", (req, res) => {
+
+  res.json({
+
+    message:
+      "Blog API Running",
+
+    routes: {
+
+      posts:
+        "/api/posts",
+
+      auth:
+        "/api/auth",
+
+      comments:
+        "/api/comments",
+
+      notifications:
+        "/api/notifications"
+
+    }
+
+  });
+
+});
+
 /* =========================
    ROUTES
 ========================= */
