@@ -32,6 +32,12 @@ exports.createComment =
     } =
       req.body;
 
+     console.log(
+  "PARENT COMMENT:",
+  parentComment
+);
+ 
+
     // VALIDATION
 
     if (!content) {
@@ -86,24 +92,41 @@ exports.createComment =
       });
 
 
+      const populatedComment =
+  await Comment.findById(
+    comment._id
+  ).populate(
+    "user",
+    "name"
+  );
+  
+  console.log(
+  "COMMENT CREATED"
+);
+
+console.log(
+  "POPULATED COMMENT:",
+  populatedComment
+);
+
       // ADD HERE 👇
 
 
    
 
-await sendEmail(
+//await sendEmail(
 
-  postExists.author.email,
+  // postExists.author.email,
 
-  "New Comment",
+ // "New Comment",
 
-  "Someone commented 😄"
+ // "Someone commented 😄"
 
-);
+// );
       
 
     res.status(201).json(
-      comment
+      populatedComment
     );
 
   } catch (error) {
